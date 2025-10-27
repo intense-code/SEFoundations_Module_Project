@@ -40,3 +40,8 @@ Create a GitHub repository to host your project. Add, commit, and push your code
 Create a README.md on the repository that gives information about your project and how to run/use it
 Submit the repository link in Google Classroom.
 
+Directions 2 Notification app:
+python3 -m venv venv
+source venv/bin/activate
+pip install plyer
+python3 py.py
