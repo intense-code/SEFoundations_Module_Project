@@ -3,9 +3,10 @@ import os
 import time
 import threading
 from datetime import datetime
+from plyer import notification  # for system popups
 
 # -------------------------------
-# Simple Command Line Task Notifier with Persistence + Alerts
+# Simple Command Line Task Notifier with Persistence + System Alerts
 # -------------------------------
 
 TASKS_FILE = "tasks.json"
@@ -82,15 +83,27 @@ def delete_task(tasks):
         print("❌ Please enter a valid number.")
 
 
+def send_notification(task):
+    """Send a desktop notification."""
+    try:
+        notification.notify(
+            title="🔔 Task Reminder",
+            message=f"{task['task']} (scheduled at {task['time']})",
+            timeout=10  # seconds the popup stays visible
+        )
+        print(f"\n🔔 ALERT: {task['task']} (at {task['time']})")
+        print("\a")  # terminal beep
+    except Exception as e:
+        print(f"⚠️ Failed to send notification: {e}")
+
+
 def notify_tasks(tasks):
     """Background thread that checks for due tasks."""
     while True:
         now = datetime.now().strftime("%H:%M")
         for task in tasks:
             if not task.get("notified") and task["time"] == now:
-                print("\n🔔 ALERT! It's time for your task:")
-                print(f"➡️ {task['task']} (scheduled at {task['time']})")
-                print("\a")  # beep sound (works in most terminals)
+                send_notification(task)
                 task["notified"] = True
                 save_tasks(tasks)
         time.sleep(ALERT_INTERVAL)
@@ -99,9 +112,9 @@ def notify_tasks(tasks):
 def main():
     """Main program loop with background notification thread."""
     tasks = load_tasks()
-    print("Welcome to Simple Command Line Task Notifier with Alerts!")
+    print("Welcome to Simple Command Line Task Notifier with System Alerts!")
 
-    # Start the background notifier
+    # Start the background notifier thread
     threading.Thread(target=notify_tasks, args=(tasks,), daemon=True).start()
 
     running = True

@@ -13,8 +13,13 @@
         "notified": false
     },
     {
-        "task": "fuck",
-        "time": "11:39",
+        "task": "di",
+        "time": "12:13",
         "notified": false
+    },
+    {
+        "task": "rich",
+        "time": "00:13",
+        "notified": true
     }
 ]
