@@ -1,12 +1,16 @@
 import json
-from datetime import datetime
 import os
+import time
+import threading
+from datetime import datetime
 
 # -------------------------------
-# Simple Command Line Task Notifier with Persistence
+# Simple Command Line Task Notifier with Persistence + Alerts
 # -------------------------------
 
 TASKS_FILE = "tasks.json"
+ALERT_INTERVAL = 60  # check every 60 seconds
+
 
 def load_tasks():
     """Load tasks from a JSON file if it exists."""
@@ -41,7 +45,7 @@ def add_task(tasks):
     try:
         # Validate time format
         datetime.strptime(task_time, "%H:%M")
-        tasks.append({"task": task_name, "time": task_time})
+        tasks.append({"task": task_name, "time": task_time, "notified": False})
         save_tasks(tasks)
         print(f"✅ Task '{task_name}' scheduled at {task_time} added successfully.")
     except ValueError:
@@ -55,7 +59,8 @@ def view_tasks(tasks):
     else:
         print("\n--- Your Tasks ---")
         for idx, task in enumerate(tasks, start=1):
-            print(f"{idx}. {task['task']} at {task['time']}")
+            status = "✅ Done" if task.get("notified") else "🕒 Pending"
+            print(f"{idx}. {task['task']} at {task['time']} [{status}]")
 
 
 def delete_task(tasks):
@@ -77,10 +82,27 @@ def delete_task(tasks):
         print("❌ Please enter a valid number.")
 
 
+def notify_tasks(tasks):
+    """Background thread that checks for due tasks."""
+    while True:
+        now = datetime.now().strftime("%H:%M")
+        for task in tasks:
+            if not task.get("notified") and task["time"] == now:
+                print("\n🔔 ALERT! It's time for your task:")
+                print(f"➡️ {task['task']} (scheduled at {task['time']})")
+                print("\a")  # beep sound (works in most terminals)
+                task["notified"] = True
+                save_tasks(tasks)
+        time.sleep(ALERT_INTERVAL)
+
+
 def main():
-    """Main program loop with error handling."""
+    """Main program loop with background notification thread."""
     tasks = load_tasks()
-    print("Welcome to Simple Command Line Task Notifier!")
+    print("Welcome to Simple Command Line Task Notifier with Alerts!")
+
+    # Start the background notifier
+    threading.Thread(target=notify_tasks, args=(tasks,), daemon=True).start()
 
     running = True
     while running:
