@@ -1,8 +1,29 @@
+import json
 from datetime import datetime
+import os
 
 # -------------------------------
-# Simple Command Line Task Notifier
+# Simple Command Line Task Notifier with Persistence
 # -------------------------------
+
+TASKS_FILE = "tasks.json"
+
+def load_tasks():
+    """Load tasks from a JSON file if it exists."""
+    if os.path.exists(TASKS_FILE):
+        try:
+            with open(TASKS_FILE, "r") as file:
+                return json.load(file)
+        except json.JSONDecodeError:
+            print("⚠️ Corrupted task file detected. Starting fresh.")
+    return []
+
+
+def save_tasks(tasks):
+    """Save tasks to a JSON file."""
+    with open(TASKS_FILE, "w") as file:
+        json.dump(tasks, file, indent=4)
+
 
 def show_menu():
     """Display the main menu options."""
@@ -20,7 +41,8 @@ def add_task(tasks):
     try:
         # Validate time format
         datetime.strptime(task_time, "%H:%M")
-        tasks.append((task_name, task_time))
+        tasks.append({"task": task_name, "time": task_time})
+        save_tasks(tasks)
         print(f"✅ Task '{task_name}' scheduled at {task_time} added successfully.")
     except ValueError:
         print("❌ Invalid time format! Please use HH:MM (e.g., 09:30).")
@@ -32,8 +54,8 @@ def view_tasks(tasks):
         print("⚠️ No tasks available.")
     else:
         print("\n--- Your Tasks ---")
-        for idx, (name, time) in enumerate(tasks, start=1):
-            print(f"{idx}. {name} at {time}")
+        for idx, task in enumerate(tasks, start=1):
+            print(f"{idx}. {task['task']} at {task['time']}")
 
 
 def delete_task(tasks):
@@ -47,7 +69,8 @@ def delete_task(tasks):
         num = int(input("Enter the number of the task to delete: "))
         if 1 <= num <= len(tasks):
             removed = tasks.pop(num - 1)
-            print(f"🗑️ Task '{removed[0]}' at {removed[1]} deleted successfully.")
+            save_tasks(tasks)
+            print(f"🗑️ Task '{removed['task']}' at {removed['time']} deleted successfully.")
         else:
             print("❌ Invalid task number.")
     except ValueError:
@@ -56,11 +79,10 @@ def delete_task(tasks):
 
 def main():
     """Main program loop with error handling."""
-    tasks = []
-    running = True
-
+    tasks = load_tasks()
     print("Welcome to Simple Command Line Task Notifier!")
 
+    running = True
     while running:
         show_menu()
         choice = input("Choose an option (1-4): ").strip()
